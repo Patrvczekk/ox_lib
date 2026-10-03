@@ -1,0 +1,38 @@
+name: Build ox_lib purple
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Get code
+        uses: actions/checkout@v4
+
+      - name: Install Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install web dependencies
+        run: bun install --frozen-lockfile
+        working-directory: web
+
+      - name: Build web UI
+        run: bunx vite build
+        working-directory: web
+
+      - name: Bundle ready-to-use ox_lib
+        run: |
+          mkdir -p out/ox_lib/web
+          cp LICENSE README.md fxmanifest.lua init.lua out/ox_lib/
+          cp -r imports resource locales out/ox_lib/
+          if [ -d modules ]; then cp -r modules out/ox_lib/; fi
+          cp -r web/build out/ox_lib/web/
+
+      - name: Upload result
+        uses: actions/upload-artifact@v4
+        with:
+          name: ox_lib_purple
+          path: out
