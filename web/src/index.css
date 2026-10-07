@@ -343,3 +343,31 @@ code {
 .toast-error {
   background-color: #c0392b;
 }
+
+
+
+@keyframes ox-shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+/* Wymuszenie szklanego motywu dla SVG Radial Menu / Skillcheck w standardzie ox_lib */
+svg polygon, svg path {
+  transition: all 0.2s ease;
+}
+.radial-menu-segment {
+  fill: rgba(18, 12, 30, 0.85) !important; 
+  stroke: rgba(167, 139, 250, 0.3) !important;
+}
+.radial-menu-segment:hover {
+  fill: rgba(139, 92, 246, 0.4) !important; 
+  filter: drop-shadow(0 0 8px rgba(139,92,246,0.6));
+}
+.skillcheck-path {
+  stroke: #8B5CF6 !important; 
+  filter: drop-shadow(0 0 5px #8B5CF6);
+}
+.skillcheck-target {
+  stroke: #22C55E !important; 
+  filter: drop-shadow(0 0 5px #22C55E);
+}
