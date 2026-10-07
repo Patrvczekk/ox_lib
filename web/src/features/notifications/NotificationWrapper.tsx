@@ -1,221 +1,92 @@
-import { useNuiEvent } from '../../hooks/useNuiEvent';
-import { toast, Toaster } from 'react-hot-toast';
-import ReactMarkdown from 'react-markdown';
-import { Box, Center, createStyles, Group, keyframes, RingProgress, Stack, Text, ThemeIcon } from '@mantine/core';
-import React, { useState } from 'react';
-import tinycolor from 'tinycolor2';
-import type { NotificationProps } from '../../typings';
-import MarkdownComponents from '../../config/MarkdownComponents';
-import LibIcon from '../../components/LibIcon';
+import React from 'react';
+import { motion } from 'framer-motion';
+import { Box, Flex, Text } from '@mantine/core';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import './NotificationItem.css';
 
-const useStyles = createStyles((theme) => ({
-  container: {
-    width: 300,
-    height: 'fit-content',
-    backgroundColor: theme.colors.dark[6],
-    color: theme.colors.dark[0],
-    padding: 12,
-    borderRadius: theme.radius.sm,
-    fontFamily: 'Roboto',
-    boxShadow: theme.shadows.sm,
-  },
-  title: {
-    fontWeight: 500,
-    lineHeight: 'normal',
-  },
-  description: {
-    fontSize: 12,
-    color: theme.colors.dark[2],
-    fontFamily: 'Roboto',
-    lineHeight: 'normal',
-  },
-  descriptionOnly: {
-    fontSize: 14,
-    color: theme.colors.dark[2],
-    fontFamily: 'Roboto',
-    lineHeight: 'normal',
-  },
-}));
+export interface NotificationProps {
+  id: string;
+  title?: string;
+  description?: string;
+  duration?: number;
+  position?: 'top-right' | 'top-left' | 'bottom-right' | 'bottom-left' | 'top' | 'bottom';
+  type?: 'inform' | 'error' | 'success' | 'warning';
+  icon?: string;
+  iconColor?: string;
+  iconAnimation?: string;
+  style?: React.CSSProperties;
+  showDuration?: boolean;
+  alignIcon?: 'top' | 'center';
+}
 
-const createAnimation = (from: string, to: string, visible: boolean) => keyframes({
-  from: {
-    opacity: visible ? 0 : 1,
-    transform: `translate${from}`,
-  },
-  to: {
-    opacity: visible ? 1 : 0,
-    transform: `translate${to}`,
-  },
-});
-
-const getAnimation = (visible: boolean, position: string) => {
-  const animationOptions = visible ? '0.2s ease-out forwards' : '0.4s ease-in forwards'
-  let animation: { from: string; to: string };
-
-  if (visible) {
-    animation = position.includes('bottom') ? { from: 'Y(30px)', to: 'Y(0px)' } : { from: 'Y(-30px)', to:'Y(0px)' };
-  } else {
-    if (position.includes('right')) {
-      animation = { from: 'X(0px)', to: 'X(100%)' }
-    } else if (position.includes('left')) {
-      animation = { from: 'X(0px)', to: 'X(-100%)' };
-    } else if (position === 'top-center') {
-      animation = { from: 'Y(0px)', to: 'Y(-100%)' };
-    } else if (position === 'bottom-center') {
-      animation = { from: 'Y(0px)', to: 'Y(100%)' };
-    } else {
-      animation = { from: 'X(0px)', to: 'X(100%)' };
-    }
-  }
-
-  return `${createAnimation(animation.from, animation.to, visible)} ${animationOptions}`
+const typeColors = {
+  success: '#22C55E',
+  error: '#EF4444',
+  warning: '#F59E0B',
+  inform: '#8B5CF6',
 };
 
-const durationCircle = keyframes({
-  '0%': { strokeDasharray: `0, ${15.1 * 2 * Math.PI}` },
-  '100%': { strokeDasharray: `${15.1 * 2 * Math.PI}, 0` },
-});
+const NotificationItem: React.FC<NotificationProps> = ({
+  title,
+  description,
+  duration = 3000,
+  position = 'top-right',
+  type = 'inform',
+  icon,
+  iconColor,
+  iconAnimation,
+  style,
+  showDuration = true,
+  alignIcon = 'center',
+}) => {
+  const isInform = type === 'inform';
+  const activeColor = typeColors[type] || typeColors.inform;
 
-const Notifications: React.FC = () => {
-  const { classes } = useStyles();
-  const [toastKey, setToastKey] = useState(0);
+  const getInitialX = () => {
+    if (position.includes('right')) return 80;
+    if (position.includes('left')) return -80;
+    return 0;
+  };
 
-  useNuiEvent<NotificationProps>('notify', (data) => {
-    if (!data.title && !data.description) return;
+  const getInitialY = () => {
+    if (position === 'top' || position === 'bottom') return position === 'top' ? -50 : 50;
+    return 0;
+  };
 
-    const toastId = data.id?.toString();
-    const duration = data.duration || 3000;
+  return (
+    <motion.div
+      layout
+      initial={{ opacity: 0, x: getInitialX(), y: getInitialY(), scale: 0.95 }}
+      animate={{ opacity: 1, x: 0, y: 0, scale: 1 }}
+      exit={{ opacity: 0, scale: 0.95, transition: { duration: 0.25 } }}
+      transition={{ type: 'spring', stiffness: 350, damping: 25 }}
+      className="ox-noti-glass"
+      style={{ ...style, '--noti-color': activeColor } as React.CSSProperties}
+    >
+      {!isInform && (
+        <div className="ox-noti-bar" style={{ backgroundColor: activeColor }} />
+      )}
 
-    let iconColor: string;
-    let position = data.position || 'top-right';
-
-    data.showDuration = data.showDuration !== undefined ? data.showDuration : true;
-
-    if (toastId) setToastKey(prevKey => prevKey + 1);
-
-    // Backwards compat with old notifications
-    switch (position) {
-      case 'top':
-        position = 'top-center';
-        break;
-      case 'bottom':
-        position = 'bottom-center';
-        break;
-    }
-
-    if (!data.icon) {
-      switch (data.type) {
-        case 'error':
-          data.icon = 'circle-xmark';
-          break;
-        case 'success':
-          data.icon = 'circle-check';
-          break;
-        case 'warning':
-          data.icon = 'circle-exclamation';
-          break;
-        default:
-          data.icon = 'circle-info';
-          break;
-      }
-    }
-
-    if (!data.iconColor) {
-      switch (data.type) {
-        case 'error':
-          iconColor = 'red.6';
-          break;
-        case 'success':
-          iconColor = 'teal.6';
-          break;
-        case 'warning':
-          iconColor = 'yellow.6';
-          break;
-        default:
-          iconColor = 'blue.6';
-          break;
-      }
-    } else {
-      iconColor = tinycolor(data.iconColor).toRgbString();
-    }
-
-    toast.custom(
-      (t) => (
-        <Box
-          sx={{
-            animation: getAnimation(t.visible, position),
-            ...data.style,
-          }}
-          className={`${classes.container}`}
-        >
-          <Group noWrap spacing={12}>
-            {data.icon && (
-              <>
-                {data.showDuration ? (
-                  <RingProgress
-                    key={toastKey}
-                    size={38}
-                    thickness={2}
-                    sections={[{ value: 100, color: iconColor }]}
-                    style={{ alignSelf: !data.alignIcon || data.alignIcon === 'center' ? 'center' : 'start' }}
-                    styles={{
-                      root: {
-                        '> svg > circle:nth-of-type(2)': {
-                          animation: `${durationCircle} linear forwards reverse`,
-                          animationDuration: `${duration}ms`,
-                        },
-                        margin: -3,
-                      },
-                    }}
-                    label={
-                      <Center>
-                        <ThemeIcon
-                          color={iconColor}
-                          radius="xl"
-                          size={32}
-                          variant={tinycolor(iconColor).getAlpha() < 0 ? undefined : 'light'}
-                        >
-                          <LibIcon icon={data.icon} fixedWidth color={iconColor} animation={data.iconAnimation} />
-                        </ThemeIcon>
-                      </Center>
-                    }
-                  />
-                ) : (
-                  <ThemeIcon
-                    color={iconColor}
-                    radius="xl"
-                    size={32}
-                    variant={tinycolor(iconColor).getAlpha() < 0 ? undefined : 'light'}
-                    style={{ alignSelf: !data.alignIcon || data.alignIcon === 'center' ? 'center' : 'start' }}
-                  >
-                    <LibIcon icon={data.icon} fixedWidth color={iconColor} animation={data.iconAnimation} />
-                  </ThemeIcon>
-                )}
-              </>
-            )}
-            <Stack spacing={0}>
-              {data.title && <Text className={classes.title}>{data.title}</Text>}
-              {data.description && (
-                <ReactMarkdown
-                  components={MarkdownComponents}
-                  className={`${!data.title ? classes.descriptionOnly : classes.description} description`}
-                >
-                  {data.description}
-                </ReactMarkdown>
-              )}
-            </Stack>
-          </Group>
+      <Flex align={alignIcon === 'center' ? 'center' : 'flex-start'} gap={14} p={14}>
+        {icon && (
+          <Box className={`ox-noti-icon ${iconAnimation ? `fa-animate-${iconAnimation}` : ''}`}>
+            <FontAwesomeIcon icon={icon as any} color={iconColor || activeColor} size="lg" />
+          </Box>
+        )}
+        <Box style={{ flex: 1, overflow: 'hidden' }}>
+          {title && <Text className="ox-noti-title">{title}</Text>}
+          {description && <Text className="ox-noti-desc">{description}</Text>}
         </Box>
-      ),
-      {
-        id: toastId,
-        duration: duration,
-        position: position,
-      }
-    );
-  });
+      </Flex>
 
-  return <Toaster />;
+      {showDuration && duration > 0 && (
+        <div
+          className="ox-noti-progress"
+          style={{ backgroundColor: activeColor, animationDuration: `${duration}ms` }}
+        />
+      )}
+    </motion.div>
+  );
 };
 
-export default Notifications;
+export default NotificationItem;
