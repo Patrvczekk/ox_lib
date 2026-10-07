@@ -1,0 +1,75 @@
+.ox-noti-glass {
+  position: relative;
+  overflow: hidden;
+  background: rgba(18, 12, 30, 0.85);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(167, 139, 250, 0.25);
+  border-radius: 8px;
+  box-shadow: 0 4px 15px rgba(139, 92, 246, 0.15), inset 0 0 10px rgba(139, 92, 246, 0.05);
+  color: #F5F3FF;
+  margin-bottom: 12px;
+  width: 100%;
+  min-width: 280px;
+  max-width: 400px;
+  pointer-events: all;
+  transition: box-shadow 0.3s ease;
+}
+
+.ox-noti-glass:hover {
+  box-shadow: 0 6px 25px rgba(139, 92, 246, 0.3), inset 0 0 15px rgba(139, 92, 246, 0.1);
+}
+
+.ox-noti-bar {
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 4px;
+  transform-origin: top;
+  animation: ox-growBar 0.45s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+  box-shadow: 0 0 8px var(--noti-color);
+}
+
+.ox-noti-title {
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-size: 0.9rem;
+  color: #F5F3FF;
+  margin-bottom: 2px;
+  text-shadow: 0 0 10px rgba(139, 92, 246, 0.3);
+}
+
+.ox-noti-desc {
+  font-size: 0.85rem;
+  color: #C4B5FD;
+  line-height: 1.4;
+  word-wrap: break-word;
+}
+
+.ox-noti-progress {
+  position: absolute;
+  bottom: 0; left: 0;
+  height: 2px;
+  width: 100%;
+  box-shadow: 0 0 8px var(--noti-color);
+  animation-name: ox-shrinkProgress;
+  animation-timing-function: linear;
+  animation-fill-mode: forwards;
+}
+
+.ox-noti-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  filter: drop-shadow(0 0 6px var(--noti-color));
+}
+
+@keyframes ox-growBar {
+  0% { transform: scaleY(0); }
+  100% { transform: scaleY(1); }
+}
+
+@keyframes ox-shrinkProgress {
+  0% { width: 100%; }
+  100% { width: 0%; }
+}
