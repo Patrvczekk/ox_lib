@@ -1,81 +1,59 @@
 import React from 'react';
-import { useNuiEvent } from '../../hooks/useNuiEvent';
-import { Box, createStyles, Group } from '@mantine/core';
-import ReactMarkdown from 'react-markdown';
-import ScaleFade from '../../transitions/ScaleFade';
-import remarkGfm from 'remark-gfm';
-import type { TextUiPosition, TextUiProps } from '../../typings';
-import MarkdownComponents from '../../config/MarkdownComponents';
-import LibIcon from '../../components/LibIcon';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Box, Flex } from '@mantine/core';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import './TextUi.css';
 
-const useStyles = createStyles((theme, params: { position?: TextUiPosition }) => ({
-  wrapper: {
-    height: '100%',
-    width: '100%',
-    position: 'absolute',
-    display: 'flex',
-    alignItems: 
-      params.position === 'top-center' ? 'baseline' :
-      params.position === 'bottom-center' ? 'flex-end' : 'center',
-    justifyContent: 
-      params.position === 'right-center' ? 'flex-end' :
-      params.position === 'left-center' ? 'flex-start' : 'center',
-  },
-  container: {
-    fontSize: 16,
-    padding: 12,
-    margin: 8,
-    backgroundColor: theme.colors.dark[6],
-    color: theme.colors.dark[0],
-    fontFamily: 'Roboto',
-    borderRadius: theme.radius.sm,
-    boxShadow: theme.shadows.sm,
-  },
-}));
+export interface TextUiProps {
+  text: string;
+  icon?: string;
+  iconColor?: string;
+  position?: 'right-center' | 'left-center' | 'top-center' | 'bottom-center';
+  style?: React.CSSProperties;
+}
 
-const TextUI: React.FC = () => {
-  const [data, setData] = React.useState<TextUiProps>({
-    text: '',
-    position: 'right-center',
-  });
-  const [visible, setVisible] = React.useState(false);
-  const { classes } = useStyles({ position: data.position });
+const parseTextWithKeycap = (rawText: string) => {
+  const match = rawText.match(/\[(.*?)\](.*)/);
+  if (match) {
+    return (
+      <>
+        <span className="ox-textui-keycap">{match[1]}</span>
+        <span className="ox-textui-text">{match[2]}</span>
+      </>
+    );
+  }
+  return <span className="ox-textui-text">{rawText}</span>;
+};
 
-  useNuiEvent<TextUiProps>('textUi', (data) => {
-    if (!data.position) data.position = 'right-center'; // Default right position
-    setData(data);
-    setVisible(true);
-  });
-
-  useNuiEvent('textUiHide', () => setVisible(false));
-
+const TextUi: React.FC<TextUiProps> = ({
+  text,
+  icon,
+  iconColor = '#A78BFA',
+  style
+}) => {
   return (
-    <>
-      <Box className={classes.wrapper}>
-        <ScaleFade visible={visible}>
-          <Box style={data.style} className={classes.container}>
-            <Group spacing={12}>
-              {data.icon && (
-                <LibIcon
-                  icon={data.icon}
-                  fixedWidth
-                  size="lg"
-                  animation={data.iconAnimation}
-                  style={{
-                    color: data.iconColor,
-                    alignSelf: !data.alignIcon || data.alignIcon === 'center' ? 'center' : 'start',
-                  }}
-                />
-              )}
-              <ReactMarkdown components={MarkdownComponents} remarkPlugins={[remarkGfm]}>
-                {data.text}
-              </ReactMarkdown>
-            </Group>
+    <AnimatePresence>
+      <motion.div
+        className="ox-textui-glass"
+        style={style}
+        initial={{ opacity: 0, scale: 0.85, y: 15 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.85, y: -15 }}
+        transition={{ type: 'spring', stiffness: 400, damping: 25 }}
+      >
+        <Flex align="center" gap={12} p="8px 14px">
+          {icon && (
+            <Box className="ox-textui-icon">
+              <FontAwesomeIcon icon={icon as any} color={iconColor} size="lg" />
+            </Box>
+          )}
+          <Box className="ox-textui-content">
+            {parseTextWithKeycap(text)}
           </Box>
-        </ScaleFade>
-      </Box>
-    </>
+        </Flex>
+      </motion.div>
+    </AnimatePresence>
   );
 };
 
-export default TextUI;
+export default TextUi;
